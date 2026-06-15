@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1a1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="裁縫記帳">
+  <meta name="description" content="裁縫工資與成本管理系統">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>裁縫記帳</title>
+  <style>
+    :root {
+      --bg: #f5f5f0;
+      --surface: #ffffff;
+      --surface2: #f0ede8;
+      --border: #d0cdc8;
+      --border2: #b8b5b0;
+      --text: #1a1a1a;
+      --text2: #555550;
+      --text3: #888880;
+      --accent: #1a1a1a;
+      --accent-text: #ffffff;
+      --success: #1a6b3a;
+      --success-bg: #d4f0de;
+      --warning: #8a5a00;
+      --warning-bg: #fef3c7;
+      --danger: #8a1a1a;
+      --danger-bg: #fde8e8;
+      --radius: 14px;
+      --radius-sm: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; background: var(--bg); font-family: -apple-system, 'Helvetica Neue', 'PingFang TC', 'Microsoft JhengHei', sans-serif; color: var(--text); }
+
+    /* Layout */
+    .app-shell { display: flex; flex-direction: column; height: 100dvh; max-width: 600px; margin: 0 auto; }
+    .content-area { flex: 1; overflow-y: auto; padding: 16px 16px 80px; -webkit-overflow-scrolling: touch; }
+    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 50; padding-bottom: env(safe-area-inset-bottom); }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 4px 8px; gap: 3px; cursor: pointer; border: none; background: none; color: var(--text3); font-size: 11px; font-family: inherit; transition: color .15s; }
+    .nav-item svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .nav-item.active { color: var(--accent); font-weight: 600; }
+
+    /* Pages */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* Typography */
+    .page-title { font-size: 26px; font-weight: 700; margin-bottom: 20px; color: var(--text); }
+    .section-title { font-size: 18px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+    .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 18px; margin-bottom: 14px; }
+    .card-title { font-size: 16px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+
+    /* Forms */
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    label { display: block; font-size: 15px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+    input[type=text], input[type=tel], input[type=date], input[type=month], input[type=number], select, textarea {
+      width: 100%; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 18px; font-family: inherit; background: var(--surface); color: var(--text);
+      appearance: none; -webkit-appearance: none; outline: none; transition: border-color .15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Buttons */
+    .btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 20px; border-radius: var(--radius-sm); font-size: 18px; font-weight: 600; font-family: inherit; cursor: pointer; border: none; transition: all .15s; min-height: 54px; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--accent); color: var(--accent-text); width: 100%; }
+    .btn-outline { background: var(--surface2); color: var(--text); width: 100%; border: 1px solid var(--border); }
+    .btn-success { background: var(--success-bg); color: var(--success); width: 100%; }
+    .btn-danger-sm { background: var(--danger-bg); color: var(--danger); padding: 10px 14px; font-size: 16px; border-radius: var(--radius-sm); min-height: auto; }
+    .btn-sm { padding: 10px 14px; font-size: 15px; min-height: auto; }
+
+    /* Item rows for order entry */
+    .item-entry { background: var(--surface2); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px; border: 1px solid var(--border); }
+    .item-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .item-entry-num { font-size: 14px; font-weight: 600; color: var(--text3); }
+    .item-row-inputs { display: grid; grid-template-columns: 1fr 80px 100px; gap: 8px; }
+    .item-row-inputs input { font-size: 16px; padding: 12px 12px; }
+    .item-row-label { font-size: 13px; color: var(--text3); margin-bottom: 4px; }
+
+    /* Total bar */
+    .total-bar { background: var(--accent); color: var(--accent-text); border-radius: var(--radius-sm); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin: 14px 0; }
+    .total-bar-label { font-size: 16px; opacity: .8; }
+    .total-bar-amount { font-size: 28px; font-weight: 700; }
+
+    /* Order list */
+    .order-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 18px; margin-bottom: 12px; cursor: pointer; transition: border-color .15s; }
+    .order-card:active { border-color: var(--accent); background: var(--surface2); }
+    .order-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .order-card-name { font-size: 20px; font-weight: 700; }
+    .order-card-amount { font-size: 22px; font-weight: 700; }
+    .order-card-meta { font-size: 15px; color: var(--text2); display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
+    .order-card-items { font-size: 14px; color: var(--text3); }
+    .badge { display: inline-block; font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
+    .badge-paid { background: var(--success-bg); color: var(--success); }
+    .badge-unpaid { background: var(--warning-bg); color: var(--warning); }
+
+    /* Filter row */
+    .filter-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filter-row input, .filter-row select { font-size: 16px; padding: 12px 14px; flex: 1; min-width: 0; }
+
+    /* Metric cards */
+    .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .metric { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; }
+    .metric-label { font-size: 14px; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
+    .metric-value { font-size: 26px; font-weight: 700; }
+    .metric-sub { font-size: 13px; color: var(--text3); margin-top: 4px; }
+    .metric-income .metric-value { color: var(--text); }
+    .metric-paid .metric-value { color: var(--success); }
+    .metric-cost .metric-value { color: var(--danger); }
+    .metric-profit .metric-value { }
+
+    /* Report toggle */
+    .toggle-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .toggle-btn { padding: 14px; border-radius: var(--radius-sm); font-size: 17px; font-weight: 600; font-family: inherit; background: var(--surface2); color: var(--text2); border: 1px solid var(--border); cursor: pointer; transition: all .15s; }
+    .toggle-btn.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+
+    /* Cost list item */
+    .cost-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: var(--surface); border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 10px; }
+    .cost-item-left { flex: 1; }
+    .cost-item-name { font-size: 17px; font-weight: 500; margin-bottom: 3px; }
+    .cost-item-meta { font-size: 14px; color: var(--text3); }
+    .cost-item-right { display: flex; align-items: center; gap: 10px; }
+    .cost-item-amount { font-size: 20px; font-weight: 700; }
+
+    /* Detail overlay */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; overflow-y: auto; padding: 16px; }
+    .overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+    .overlay-box { background: var(--surface); border-radius: var(--radius); width: 100%; max-width: 560px; margin-top: 20px; padding: 22px; }
+    .overlay-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .overlay-title { font-size: 22px; font-weight: 700; }
+    .close-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--surface2); border: none; cursor: pointer; font-size: 20px; }
+
+    .detail-table { width: 100%; font-size: 16px; border-collapse: collapse; margin-bottom: 16px; }
+    .detail-table td { padding: 10px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .detail-table td:first-child { color: var(--text2); width: 90px; }
+    .detail-table td:last-child { font-weight: 500; text-align: right; }
+
+    .items-table { width: 100%; font-size: 15px; border-collapse: collapse; }
+    .items-table th { text-align: left; padding: 8px 0; font-size: 14px; color: var(--text3); font-weight: 500; border-bottom: 1px solid var(--border); }
+    .items-table th:last-child, .items-table td:last-child { text-align: right; }
+    .items-table td { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .items-table tr:last-child td { border-bottom: none; }
+
+    /* Backup section */
+    .backup-note { font-size: 16px; color: var(--text2); line-height: 1.7; margin-bottom: 14px; background: var(--warning-bg); border-radius: var(--radius-sm); padding: 14px; }
+    .stats-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 16px; }
+    .stats-row:last-child { border-bottom: none; }
+
+    /* Toast */
+    .toast { display: none; position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: #fff; padding: 12px 24px; border-radius: 99px; font-size: 16px; font-weight: 500; z-index: 200; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,.25); }
+    .toast.show { display: block; animation: fadein .2s; }
+    @keyframes fadein { from { opacity:0; transform: translateX(-50%) translateY(10px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 17px; }
+    .empty-icon { font-size: 48px; margin-bottom: 10px; }
+
+    /* Category breakdown */
+    .cat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 16px; }
+    .cat-row:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="content-area" id="content-area">
+
+    <!-- 新增訂單 -->
+    <div class="page active" id="page-new-order">
+      <div class="page-title">✂️ 新增訂單</div>
+
+      <div class="card">
+        <div class="card-title">👤 客戶資料</div>
+        <div class="field">
+          <label>客戶姓名 *</label>
+          <input type="text" id="c-name" placeholder="例：王小明" autocomplete="off">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>聯絡電話</label>
+            <input type="tel" id="c-phone" placeholder="0912-345-678">
+          </div>
+          <div class="field">
+            <label>訂單日期 *</label>
+            <input type="date" id="c-date">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>取件日期</label>
+            <input type="date" id="c-pickup">
+          </div>
+          <div class="field">
+            <label>付款狀態</label>
+            <select id="c-paid">
+              <option value="unpaid">⏳ 未付款</option>
+              <option value="paid">✅ 已付款</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>備註</label>
+          <textarea id="c-note" placeholder="特殊要求、急件說明…"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <div class="card-title" style="margin:0;">🧵 修改項目</div>
+          <button class="btn btn-outline btn-sm" onclick="addItemRow()">＋ 新增項目</button>
+        </div>
+        <div id="items-container"></div>
+        <div class="total-bar">
+          <span class="total-bar-label">本單合計</span>
+          <span class="total-bar-amount" id="order-total">$0</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveOrder()">💾 儲存訂單</button>
+      <div style="height:8px;"></div>
+    </div>
+
+    <!-- 訂單紀錄 -->
+    <div class="page" id="page-orders">
+      <div class="page-title">📋 訂單紀錄</div>
+      <div class="filter-row">
+        <input type="text" id="search-name" placeholder="搜尋姓名或電話" oninput="renderOrders()">
+        <input type="month" id="filter-month" oninput="renderOrders()">
+      </div>
+      <div class="filter-row" style="margin-top:-6px;">
+        <select id="filter-paid" onchange="renderOrders()">
+          <option value="">全部訂單</option>
+          <option value="paid">✅ 已付款</option>
+          <option value="unpaid">⏳ 未付款</option>
+        </select>
+      </div>
+      <div id="orders-list"></div>
+    </div>
+
+    <!-- 支出成本 -->
+    <div class="page" id="page-costs">
+      <div class="page-title">💸 支出記錄</div>
+      <div class="card">
+        <div class="card-title">新增支出</div>
+        <div class="row2">
+          <div class="field">
+            <label>日期 *</label>
+            <input type="date" id="cost-date">
+          </div>
+          <div class="field">
+            <label>類別</label>
+            <select id="cost-cat">
+              <option value="原料">原料布料</option>
+              <option value="攤租">攤位租金</option>
+              <option value="水電">水電費用</option>
+              <option value="設備">設備維修</option>
+              <option value="其他">其他費用</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>說明 *</label>
+          <input type="text" id="cost-desc" placeholder="例：購入白棉布 3 碼">
+        </div>
+        <div class="field">
+          <label>金額（元）*</label>
+          <input type="number" id="cost-amount" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <button class="btn btn-primary" onclick="saveCost()">＋ 新增支出</button>
+      </div>
+      <div class="section-title">近期支出</div>
+      <div id="costs-list"></div>
+    </div>
+
+    <!-- 報表 -->
+    <div class="page" id="page-report">
+      <div class="page-title">📊 收支報表</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" id="tog-day" onclick="setReportMode('day')">每日</button>
+        <button class="toggle-btn" id="tog-month" onclick="setReportMode('month')">每月</button>
+        <button class="toggle-btn" id="tog-year" onclick="setReportMode('year')">每年</button>
+      </div>
+      <div id="rep-date-row" style="margin-bottom:16px;"></div>
+      <div id="report-content"></div>
+      <button class="btn btn-success" onclick="exportReport()">⬇️ 匯出報表（文字檔）</button>
+      <div style="height:8px;"></div>
+    </div>
+
+    <!-- 備份 -->
+    <div class="page" id="page-backup">
+      <div class="page-title">🗄️ 備份還原</div>
+      <div class="backup-note">
+        ⚠️ 建議每天操作完後按一次「備份下載」，將檔案存到手機相簿或 LINE 傳給自己，避免資料意外消失。
+      </div>
+      <div class="card">
+        <div id="last-backup-info" style="font-size:16px; color:var(--text2); margin-bottom:16px;"></div>
+        <button class="btn btn-primary" onclick="backupData()" style="margin-bottom:12px;">⬇️ 備份下載（匯出全部資料）</button>
+        <button class="btn btn-outline" onclick="document.getElementById('restore-input').click()">⬆️ 從備份檔還原</button>
+        <input type="file" id="restore-input" accept=".json" style="display:none" onchange="restoreData(event)">
+        <p style="font-size:14px; color:var(--text3); margin-top:12px;">還原時會覆蓋目前所有資料，請確認後再操作。</p>
+      </div>
+      <div class="card">
+        <div class="card-title">資料統計</div>
+        <div id="data-stats"></div>
+      </div>
+    </div>
+
+  </div><!-- end content-area -->
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-new-order" onclick="showPage('new-order')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      新增訂單
+    </button>
+    <button class="nav-item" id="nav-orders" onclick="showPage('orders')">
+      <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg>
+      訂單紀錄
+    </button>
+    <button class="nav-item" id="nav-costs" onclick="showPage('costs')">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      支出成本
+    </button>
+    <button class="nav-item" id="nav-report" onclick="showPage('report')">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      報表
+    </button>
+    <button class="nav-item" id="nav-backup" onclick="showPage('backup')">
+      <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      備份
+    </button>
+  </nav>
+</div>
+
+<!-- Detail Overlay -->
+<div class="overlay" id="detail-overlay" onclick="closeDetail(event)">
+  <div class="overlay-box" id="detail-box"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+let orders = [], costs = [];
+
+function loadData() {
+  try { orders = JSON.parse(localStorage.getItem('tailor_orders') || '[]'); } catch(e) { orders = []; }
+  try { costs = JSON.parse(localStorage.getItem('tailor_costs') || '[]'); } catch(e) { costs = []; }
+}
+function saveData() {
+  localStorage.setItem('tailor_orders', JSON.stringify(orders));
+  localStorage.setItem('tailor_costs', JSON.stringify(costs));
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+function today() { return new Date().toISOString().split('T')[0]; }
+
+/* ── Navigation ── */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  document.getElementById('content-area').scrollTop = 0;
+  if (id === 'orders') renderOrders();
+  if (id === 'costs') renderCosts();
+  if (id === 'report') { initReport(); renderReport(); }
+  if (id === 'backup') renderStats();
+}
+
+/* ── New Order ── */
+let itemCount = 0;
+function addItemRow(desc='', qty=1, price='') {
+  itemCount++;
+  const c = document.getElementById('items-container');
+  const div = document.createElement('div');
+  div.className = 'item-entry';
+  div.id = 'item-' + itemCount;
+  div.innerHTML = `
+    <div class="item-entry-header">
+      <span class="item-entry-num">項目 ${itemCount}</span>
+      <button class="btn btn-danger-sm" onclick="removeItem('item-${itemCount}')">刪除</button>
+    </div>
+    <div class="item-row-label">修改項目名稱</div>
+    <input type="text" placeholder="例：褲腳改短、腰圍收小" value="${desc}" oninput="calcTotal()" style="margin-bottom:10px;">
+    <div class="item-row-inputs">
+      <div>
+        <div class="item-row-label">項目名稱（已填）</div>
+      </div>
+      <div>
+        <div class="item-row-label">件數</div>
+        <input type="number" placeholder="件" min="1" value="${qty}" oninput="calcTotal()" inputmode="numeric">
+      </div>
+      <div>
+        <div class="item-row-label">每件工資(元)</div>
+        <input type="number" placeholder="元" min="0" value="${price}" oninput="calcTotal()" inputmode="numeric">
+      </div>
+    </div>
+  `;
+  c.appendChild(div);
+  calcTotal();
+  reindexItems();
+}
+function reindexItems() {
+  document.querySelectorAll('.item-entry').forEach((el, i) => {
+    el.querySelector('.item-entry-num').textContent = '項目 ' + (i + 1);
+  });
+}
+function removeItem(id) {
+  document.getElementById(id)?.remove();
+  calcTotal();
+  reindexItems();
+}
+function calcTotal() {
+  let total = 0;
+  document.querySelectorAll('.item-entry').forEach(el => {
+    const inputs = el.querySelectorAll('input[type=number]');
+    const qty = parseFloat(inputs[0].value) || 0;
+    const price = parseFloat(inputs[1].value) || 0;
+    total += qty * price;
+  });
+  document.getElementById('order-total').textContent = fmt(total);
+}
+function saveOrder() {
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) { alert('請填寫客戶姓名'); return; }
+  const date = document.getElementById('c-date').value;
+  if (!date) { alert('請選擇訂單日期'); return; }
+  const items = [];
+  document.querySelectorAll('.item-entry').forEach(el => {
+    const desc = el.querySelector('input[type=text]').value.trim();
+    const numInputs = el.querySelectorAll('input[type=number]');
+    const qty = parseFloat(numInputs[0].value) || 0;
+    const price = parseFloat(numInputs[1].value) || 0;
+    if (desc) items.push({ desc, qty: qty || 1, price: price || 0 });
+  });
+  if (!items.length) { alert('請至少填寫一個修改項目名稱'); return; }
+  const total = items.reduce((s, i) => s + i.qty * i.price, 0);
+  orders.unshift({
+    id: Date.now(),
+    name, phone: document.getElementById('c-phone').value.trim(),
+    date, pickup: document.getElementById('c-pickup').value,
+    note: document.getElementById('c-note').value.trim(),
+    paid: document.getElementById('c-paid').value,
+    items, total
+  });
+  saveData();
+  resetForm();
+  toast('✅ 訂單已儲存！');
+}
+function resetForm() {
+  ['c-name','c-phone','c-note'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('c-pickup').value = '';
+  document.getElementById('c-date').value = today();
+  document.getElementById('c-paid').value = 'unpaid';
+  document.getElementById('items-container').innerHTML = '';
+  itemCount = 0;
+  addItemRow();
+}
+
+/* ── Orders List ── */
+function renderOrders() {
+  const q = (document.getElementById('search-name').value||'').toLowerCase();
+  const m = document.getElementById('filter-month').value;
+  const p = document.getElementById('filter-paid').value;
+  const filtered = orders.filter(o => {
+    if (q && !o.name.toLowerCase().includes(q) && !(o.phone||'').includes(q)) return false;
+    if (m && !o.date.startsWith(m)) return false;
+    if (p && o.paid !== p) return false;
+    return true;
+  });
+  const list = document.getElementById('orders-list');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div>找不到符合的訂單</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(o => `
+    <div class="order-card" onclick="showDetail(${o.id})">
+      <div class="order-card-top">
+        <span class="order-card-name">${o.name}</span>
+        <span class="order-card-amount">${fmt(o.total)}</span>
+      </div>
+      <div class="order-card-meta">
+        <span>📅 ${o.date}</span>
+        ${o.pickup ? `<span>🧵 取件：${o.pickup}</span>` : ''}
+        ${o.phone ? `<span>📞 ${o.phone}</span>` : ''}
+        <span class="badge ${o.paid==='paid'?'badge-paid':'badge-unpaid'}">${o.paid==='paid'?'✅ 已付款':'⏳ 未付款'}</span>
+      </div>
+      <div class="order-card-items">${o.items.map(i=>`${i.desc}×${i.qty}`).join('、')}</div>
+    </div>
+  `).join('');
+}
+function showDetail(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('detail-box').innerHTML = `
+    <div class="overlay-header">
+      <div class="overlay-title">${o.name}</div>
+      <button class="close-btn" onclick="closeDetail(null,true)">✕</button>
+    </div>
+    <table class="detail-table">
+      ${o.phone ? `<tr><td>電話</td><td>${o.phone}</td></tr>` : ''}
+      <tr><td>訂單日期</td><td>${o.date}</td></tr>
+      ${o.pickup ? `<tr><td>取件日期</td><td>${o.pickup}</td></tr>` : ''}
+      <tr><td>付款</td><td><span class="badge ${o.paid==='paid'?'badge-paid':'badge-unpaid'}">${o.paid==='paid'?'✅ 已付款':'⏳ 未付款'}</span></td></tr>
+      ${o.note ? `<tr><td>備註</td><td>${o.note}</td></tr>` : ''}
+    </table>
+    <div class="section-title" style="font-size:17px; margin:16px 0 10px;">修改項目明細</div>
+    <table class="items-table">
+      <thead><tr><th>項目</th><th>件數</th><th>單價</th><th>小計</th></tr></thead>
+      <tbody>
+        ${o.items.map(i=>`<tr><td>${i.desc}</td><td style="text-align:center;">${i.qty}</td><td style="text-align:right;">${fmt(i.price)}</td><td style="text-align:right; font-weight:700;">${fmt(i.qty*i.price)}</td></tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="total-bar" style="margin:14px 0;">
+      <span class="total-bar-label">合計</span>
+      <span class="total-bar-amount">${fmt(o.total)}</span>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px;">
+      <button class="btn ${o.paid==='paid'?'btn-outline':'btn-success'} btn-sm" onclick="togglePaid(${o.id})" style="font-size:16px;">
+        ${o.paid==='paid'?'標記為未付款':'✅ 標記已付款'}
+      </button>
+      <button class="btn btn-danger-sm" onclick="deleteOrder(${o.id})" style="flex:1; font-size:16px; min-height:48px;">
+        🗑️ 刪除訂單
+      </button>
+    </div>
+  `;
+  document.getElementById('detail-overlay').classList.add('open');
+}
+function closeDetail(e, force) {
+  if (force || (e && e.target === document.getElementById('detail-overlay')))
+    document.getElementById('detail-overlay').classList.remove('open');
+}
+function togglePaid(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  o.paid = o.paid === 'paid' ? 'unpaid' : 'paid';
+  saveData();
+  toast(o.paid === 'paid' ? '✅ 已標記為已付款' : '標記為未付款');
+  closeDetail(null, true);
+  renderOrders();
+}
+function deleteOrder(id) {
+  if (!confirm('確定要刪除這筆訂單嗎？此動作無法復原。')) return;
+  orders = orders.filter(x => x.id !== id);
+  saveData();
+  closeDetail(null, true);
+  renderOrders();
+  toast('訂單已刪除');
+}
+
+/* ── Costs ── */
+function saveCost() {
+  const date = document.getElementById('cost-date').value;
+  const desc = document.getElementById('cost-desc').value.trim();
+  const amount = parseFloat(document.getElementById('cost-amount').value);
+  if (!date || !desc || isNaN(amount) || amount <= 0) { alert('請填寫日期、說明及金額'); return; }
+  costs.unshift({ id: Date.now(), date, cat: document.getElementById('cost-cat').value, desc, amount });
+  saveData();
+  document.getElementById('cost-desc').value = '';
+  document.getElementById('cost-amount').value = '';
+  renderCosts();
+  toast('✅ 支出已記錄');
+}
+function renderCosts() {
+  const list = document.getElementById('costs-list');
+  const recent = costs.slice(0, 50);
+  if (!recent.length) { list.innerHTML = '<div class="empty-state"><div class="empty-icon">🧾</div>尚無支出記錄</div>'; return; }
+  list.innerHTML = recent.map(c => `
+    <div class="cost-item">
+      <div class="cost-item-left">
+        <div class="cost-item-name">${c.desc}</div>
+        <div class="cost-item-meta">${c.date}・${c.cat}</div>
+      </div>
+      <div class="cost-item-right">
+        <span class="cost-item-amount">${fmt(c.amount)}</span>
+        <button class="btn btn-danger-sm btn-sm" onclick="deleteCost(${c.id})" style="font-size:14px; padding:8px 12px;">刪除</button>
+      </div>
+    </div>
+  `).join('');
+}
+function deleteCost(id) {
+  if (!confirm('確定刪除此支出記錄？')) return;
+  costs = costs.filter(c => c.id !== id);
+  saveData();
+  renderCosts();
+  toast('已刪除');
+}
+
+/* ── Report ── */
+let reportMode = 'day';
+function setReportMode(m) {
+  reportMode = m;
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tog-' + m).classList.add('active');
+  initReport();
+  renderReport();
+}
+function initReport() {
+  const row = document.getElementById('rep-date-row');
+  if (reportMode === 'day') {
+    row.innerHTML = `<input type="date" id="rep-val" value="${today()}" onchange="renderReport()" style="font-size:18px; max-width:220px;">`;
+  } else if (reportMode === 'month') {
+    row.innerHTML = `<input type="month" id="rep-val" value="${today().slice(0,7)}" onchange="renderReport()" style="font-size:18px; max-width:200px;">`;
+  } else {
+    row.innerHTML = `<input type="number" id="rep-val" value="${new Date().getFullYear()}" min="2020" max="2099" onchange="renderReport()" style="font-size:18px; max-width:140px;" inputmode="numeric">`;
+  }
+}
+function renderReport() {
+  const prefix = document.getElementById('rep-val')?.value || '';
+  const fo = orders.filter(o => o.date.startsWith(prefix));
+  const fc = costs.filter(c => c.date.startsWith(prefix));
+  const income = fo.reduce((s,o) => s+o.total, 0);
+  const paid = fo.filter(o=>o.paid==='paid').reduce((s,o)=>s+o.total,0);
+  const totalCosts = fc.reduce((s,c) => s+c.amount, 0);
+  const profit = income - totalCosts;
+  const catMap = fc.reduce((acc,c) => { acc[c.cat]=(acc[c.cat]||0)+c.amount; return acc; }, {});
+  document.getElementById('report-content').innerHTML = `
+    <div class="metrics">
+      <div class="metric metric-income">
+        <div class="metric-label">總工資收入</div>
+        <div class="metric-value">${fmt(income)}</div>
+        <div class="metric-sub">${fo.length} 筆訂單</div>
+      </div>
+      <div class="metric metric-paid">
+        <div class="metric-label">已收款</div>
+        <div class="metric-value">${fmt(paid)}</div>
+        <div class="metric-sub">未收：${fmt(income-paid)}</div>
+      </div>
+      <div class="metric metric-cost">
+        <div class="metric-label">總支出成本</div>
+        <div class="metric-value">${fmt(totalCosts)}</div>
+        <div class="metric-sub">${fc.length} 筆支出</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">淨利潤</div>
+        <div class="metric-value" style="color:${profit>=0?'var(--success)':'var(--danger)'};">${fmt(profit)}</div>
+        <div class="metric-sub">${profit>=0?'💚 盈餘':'🔴 虧損'}</div>
+      </div>
+    </div>
+    ${Object.keys(catMap).length ? `
+    <div class="card">
+      <div class="card-title">支出分類明細</div>
+      ${Object.entries(catMap).map(([k,v])=>`<div class="cat-row"><span>${k}</span><span style="font-weight:700;">${fmt(v)}</span></div>`).join('')}
+    </div>` : ''}
+  `;
+}
+function exportReport() {
+  const prefix = document.getElementById('rep-val')?.value || '';
+  const fo = orders.filter(o => o.date.startsWith(prefix));
+  const fc = costs.filter(c => c.date.startsWith(prefix));
+  const income = fo.reduce((s,o)=>s+o.total,0);
+  const paid = fo.filter(o=>o.paid==='paid').reduce((s,o)=>s+o.total,0);
+  const totalCosts = fc.reduce((s,c)=>s+c.amount,0);
+  let txt = `===== 裁縫收支報表 ${prefix} =====\n\n`;
+  txt += `【收入摘要】\n  總工資收入：${fmt(income)}\n  已收款：${fmt(paid)}\n  未收款：${fmt(income-paid)}\n\n`;
+  txt += `【支出摘要】\n  總支出：${fmt(totalCosts)}\n\n`;
+  txt += `【淨利潤】：${fmt(income-totalCosts)}\n\n`;
+  txt += `━━━ 訂單明細（共 ${fo.length} 筆）━━━\n`;
+  fo.forEach(o => {
+    txt += `\n日期：${o.date}  姓名：${o.name}  ${o.paid==='paid'?'[已付款]':'[未付款]'}\n`;
+    if (o.phone) txt += `電話：${o.phone}\n`;
+    o.items.forEach(i => txt += `  • ${i.desc} ×${i.qty}件 @${fmt(i.price)}/件 = ${fmt(i.qty*i.price)}\n`);
+    txt += `  小計：${fmt(o.total)}\n`;
+    if (o.note) txt += `  備註：${o.note}\n`;
+  });
+  txt += `\n━━━ 支出明細（共 ${fc.length} 筆）━━━\n`;
+  fc.forEach(c => txt += `${c.date}  [${c.cat}]  ${c.desc}：${fmt(c.amount)}\n`);
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `裁縫報表_${prefix}.txt`;
+  a.click();
+  toast('✅ 報表已匯出');
+}
+
+/* ── Backup ── */
+function backupData() {
+  const data = { orders, costs, backed: new Date().toISOString(), version: 1 };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `裁縫備份_${today()}.json`;
+  a.click();
+  localStorage.setItem('tailor_last_backup', new Date().toISOString());
+  renderStats();
+  toast('✅ 備份完成！請存到安全的地方');
+}
+function restoreData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data.orders)) { alert('備份檔格式不正確'); return; }
+      const backTime = data.backed ? new Date(data.backed).toLocaleString('zh-TW') : '不明';
+      if (!confirm(`確定要還原備份？\n備份時間：${backTime}\n\n⚠️ 目前所有資料將被覆蓋！`)) return;
+      orders = data.orders || [];
+      costs = data.costs || [];
+      saveData();
+      renderStats();
+      toast('✅ 資料已成功還原');
+    } catch(e) { alert('讀取備份檔失敗，請確認檔案是否正確'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+function renderStats() {
+  const last = localStorage.getItem('tailor_last_backup');
+  document.getElementById('last-backup-info').textContent = last
+    ? `上次備份：${new Date(last).toLocaleString('zh-TW')}`
+    : '⚠️ 尚未備份過，建議立即備份！';
+  document.getElementById('data-stats').innerHTML = `
+    <div class="stats-row"><span>總訂單數</span><span style="font-weight:700;">${orders.length} 筆</span></div>
+    <div class="stats-row"><span>未付款訂單</span><span style="font-weight:700; color:var(--warning);">${orders.filter(o=>o.paid==='unpaid').length} 筆</span></div>
+    <div class="stats-row"><span>總支出記錄</span><span style="font-weight:700;">${costs.length} 筆</span></div>
+    <div class="stats-row"><span>累計總工資</span><span style="font-weight:700;">${fmt(orders.reduce((s,o)=>s+o.total,0))}</span></div>
+  `;
+}
+
+/* ── Init ── */
+loadData();
+document.getElementById('c-date').value = today();
+document.getElementById('cost-date').value = today();
+addItemRow();
+
+/* ── Service Worker ── */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
